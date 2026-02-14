@@ -1,0 +1,65 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Review Last Upload</title>
+        <p><a href="{{ url_for('home') }}">← Back to home</a></p>
+  </head>
+  <body>
+    <h1>Review Last Upload</h1>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul>
+          {% for m in messages %}
+            <li>{{ m }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    <form method="post" action="{{ url_for('update_categories') }}">
+      <table border="1" cellpadding="4" cellspacing="0">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Description</th>
+            <th>Account</th>
+            <th>Amount</th>
+            <th>Category</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for tx in transactions %}
+          <tr>
+            <td>{{ tx.date }}</td>
+            <td>{{ tx.description }}</td>
+            <td>{{ tx.account }}</td>
+            <td>{{ "%.2f"|format(tx.amount) }}</td>
+            <td>
+              <select name="category_{{ tx.id }}">
+                <option value="">Uncategorised</option>
+                {% for name in category_names %}
+                  <option value="{{ name }}" {% if tx.category == name %}selected{% endif %}>
+                    {{ name }}
+                  </option>
+                {% endfor %}
+              </select>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <p>
+        <button type="submit" name="action" value="save">Save category changes</button>
+        <button type="submit" name="action" value="send_to_claude">
+          Save & send uncategorised to Claude
+        </button>
+        <button type="submit" name="action" value="reset_to_uncategorised">
+          Set all to Uncategorised
+        </button>
+</p>
+
+    </form>
+  </body>
+</html>

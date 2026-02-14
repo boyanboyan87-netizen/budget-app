@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Budget App</title>
+  </head>
+  <body>
+    <h1>Budget App</h1>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul>
+          {% for m in messages %}
+            <li>{{ m }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    <h2>Quick stats</h2>
+    <ul>
+      <li>Total transactions: {{ total_tx }}</li>
+      <li>Uncategorised transactions: {{ uncategorised_tx }}</li>
+    </ul>
+
+    <h2>Actions</h2>
+    <ul>
+      <li><a href="{{ url_for('upload_csv') }}">Upload new CSV</a></li>
+      <li><a href="{{ url_for('review_last_upload') }}">Review last upload</a></li>
+      <li><a href="{{ url_for('list_transactions') }}">View all transactions</a></li>
+      <li><a href="{{ url_for('uncategorised_view') }}">View uncategorised transactions</a></li>
+      <li><a href="{{ url_for('categorise_batch') }}">Send uncategorised to Claude</a></li>
+    </ul>
+
+    <h2>All routes (debug)</h2> #DEBUG
+    <table border="1" cellpadding="4" cellspacing="0">
+      <thead>
+        <tr>
+          <th>Rule</th>
+          <th>Endpoint</th>
+          <th>Methods</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in routes %}
+        <tr>
+          <td>{{ r.rule }}</td>
+          <td>{{ r.endpoint }}</td>
+          <td>{{ r.methods }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </body>
+</html>

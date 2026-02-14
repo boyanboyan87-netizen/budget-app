@@ -1,0 +1,43 @@
+<!--
+This is a very simple HTML page with a form that lets you choose a CSV file
+and send it to the backend.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Upload Bank CSV</title>
+</head>
+<body>
+    <p><a href="{{ url_for('home') }}">← Back to home</a></p>
+    <h1>Upload a bank CSV file</h1>
+
+    <!-- 
+    The form sends a POST request to /upload-csv
+    enctype="multipart/form-data" is REQUIRED for file uploads.
+    -->
+    <form action="/upload-csv" method="post" enctype="multipart/form-data">
+        <!-- Select which bank this CSV is from -->
+        <label for="bank">Bank:</label>
+        <select name="bank" id="bank" required>
+            <option value="">-- Select bank --</option>
+            <option value="amex">AMEX</option>
+            <option value="barclays">Barclays</option>
+            <option value="revolut">Revolut</option>
+        </select>
+        <br><br>
+
+        <!-- File picker -->
+        <input type="file" name="file" accept=".csv" required>
+
+        <!-- Submit button -->
+        <button type="submit">Upload</button>
+    </form>
+
+    {% if message %}
+        <p>{{ message }}</p>
+    {% endif %}
+</body>
+
+
+</html>
