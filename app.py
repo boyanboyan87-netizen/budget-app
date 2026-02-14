@@ -21,8 +21,6 @@ from helpers import (
     save_transactions,
 )
 
-#git commit test
-
 # Load our secrets from .env file
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
