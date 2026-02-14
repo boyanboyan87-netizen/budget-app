@@ -21,6 +21,7 @@ from helpers import (
     save_transactions,
 )
 
+# DEBUG: verssion 1 git check
 
 # Load our secrets from .env file
 load_dotenv()
