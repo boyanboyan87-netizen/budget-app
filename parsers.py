@@ -61,6 +61,7 @@ def parse_revolut(df):
         (df['Product'] == 'Current')
     ].copy()
 
+    # DEV - TO REMOVE
     # Keep only the first 10 rows after filtering to avoid overwhelming the database during testing
     df_clean = df_clean.head(10)
 

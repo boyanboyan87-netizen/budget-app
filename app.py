@@ -30,6 +30,7 @@ if not DATABASE_URL:
 
 # Create Flask app
 app = Flask(__name__)
+# TODO - store in .env not hardcoded here
 app.secret_key = "dev"  # or from env
 
 # Tell Flask where our database lives
@@ -289,7 +290,7 @@ def uncategorised_transactions():
     """
 
     uncats = Transaction.query.filter(
-        Transaction.category.s_(None)
+        Transaction.category.is_(None)
     ).order_by(Transaction.date.desc()).all()
 
     result = []
