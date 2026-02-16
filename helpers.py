@@ -29,16 +29,22 @@ def normalise_description(description: str) -> str:
     if not description:
         return ""
 
-    # 1) Collapse multiple spaces
+    # Collapse multiple spaces
     text = " ".join(description.split())
 
-    # 2) Remove patterns like 'ON 01 FEB', 'ON 12 MAR', etc. (rough heuristic)
+    # Remove patterns like 'ON 01 FEB', 'ON 12 MAR', etc. (rough heuristic)
     text = re.sub(r"\bON\s+\d{1,2}\s+[A-Z]{3}\b", "", text)
 
-    # 3) Strip trailing 'BCC', 'POS', etc. (add more as you discover patterns)
+    # Strip trailing 'BCC', 'POS', etc. (add more as you discover patterns)
     text = re.sub(r"\b(BCC|POS|DD|CARD)\b$", "", text)
 
-    # 4) Final cleanup: collapse spaces again and uppercase for consistent matching
+    # Remove date patterns like 12/01/2024, 01-02-2024
+    text = re.sub(r"\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b", "", text)
+
+    # Remove REF: patterns like REF:123456789
+    text = re.sub(r"\bREF:\d+\b", "", text)
+
+    # Final cleanup: collapse spaces again and uppercase for consistent matching
     text = " ".join(text.split()).upper()
 
     return text

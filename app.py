@@ -10,9 +10,6 @@ from flask import Flask, jsonify, request, render_template, flash, redirect, url
 from claude_client import categorise_with_claude
 from models import db, Transaction
 from helpers import (
-    allowed_file,
-    normalise_description,
-    guess_category_from_history,
     get_all_category_names,
     build_claude_payload,
     load_uploaded_csv,
@@ -24,14 +21,14 @@ from helpers import (
 # Load our secrets from .env file
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
-
 if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL is not set in the environment (.env)")
 
 # Create Flask app
 app = Flask(__name__)
-# TODO - store in .env not hardcoded here
-app.secret_key = "dev"  # or from env
+app.secret_key = os.getenv("SECRET_KEY")
+if not app.secret_key:
+    raise RuntimeError("SECRET_KEY is not set in the environment (.env)")
 
 # Tell Flask where our database lives
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
@@ -40,6 +37,9 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Connect our database to Flask
 db.init_app(app)
+with app.app_context():
+    # db.drop_all() #TODO - remove this after first run
+    db.create_all()
 
 def get_all_routes():
     """
@@ -95,36 +95,14 @@ def home():
         uncategorised_tx=uncategorised_tx,
     )
 
-@app.route('/test-db')
-def test_db():
-    """TEST ROUTE: Creates + reads transactions from database"""
-    with app.app_context():  # Needed for database operations
-        
-        # Step 1: Create a test transaction
-        test_tx = Transaction(
-            date=datetime(2026, 2, 12),     # Date of transaction
-            amount=45.99,                   # How much
-            description="SAINSBURYS UK",    # What they bought
-            account="AMEX"                  # Which card
-        )
-        
-        # Step 2: Save it to database
-        db.session.add(test_tx)         # Add to "pending" list
-        db.session.commit()             # Actually save to database
-        
-        # Step 3: Read all transactions back
-        transactions = Transaction.query.all()
-        
-        # Step 4: Convert to JSON for web browser
-        return jsonify({
-            'message': 'Database test successful!',
-            'transactions': [{
-                'id': t.id,
-                'description': t.description,
-                'amount': t.amount,
-                'account': t.account
-            } for t in transactions]  # List comprehension = Python magic
-        })
+@app.route('/db-info')
+def db_info():
+    """Show which database we're connected to"""
+    return {
+        'database_url': 'PostgreSQL on Neon',  # Don't expose credentials
+        'dialect': db.engine.dialect.name,
+        'driver': db.engine.driver,
+    }
     
 @app.route("/upload-csv", methods=["GET", "POST"])
 def upload_csv():

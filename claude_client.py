@@ -18,13 +18,6 @@ def categorise_with_claude(transactions, category_names):
     """
     Ask Claude to categorise a list of transactions.
 
-    Input: list of dicts, each with keys:
-      - id (int)
-      - date (string)
-      - amount (float or string)
-      - description (string)
-      - account (string)
-
     Returns: dict[int, str] mapping transaction id -> category
     """
     print(f"DEBUG: categorise_with_claude called with {len(transactions)} txs") #DEBUG
