@@ -13,7 +13,7 @@ if not api_key:
 
 client = Anthropic(api_key=api_key)
 
-def build_system_prompt(category_names):
+def build_system_prompt(category_names: list[str]) -> str:
     """Build the system prompt with allowed categories."""
     category_list_str = ", ".join(category_names)
 
@@ -26,7 +26,7 @@ def build_system_prompt(category_names):
         )
     return system_prompt
 
-def build_user_prompt(transactions):
+def build_user_prompt(transactions: list[dict]) -> str:
     # Build the user prompt with one transaction per line
     lines = []
     for tx in transactions:
@@ -51,7 +51,7 @@ def build_user_prompt(transactions):
 
     return user_prompt
 
-def call_claude_api(system_prompt, user_prompt):
+def call_claude_api(system_prompt: str, user_prompt: str) -> str:
     """Call Claude API and return raw response text."""
 
     print("DEBUG: sending prompt to Claude...") #DEBUG
@@ -81,7 +81,7 @@ def call_claude_api(system_prompt, user_prompt):
     return text
 
 
-def clean_json_response(text):
+def clean_json_response(text: str) -> str:
     """Strip markdown fences and repair malformed JSON."""
     text_clean = text.strip()
 
@@ -112,7 +112,7 @@ def clean_json_response(text):
     print("DEBUG: cleaned Claude text:", repr(text_clean)) #DEBUG
     return text_clean
 
-def parse_categorization_result(json_text):
+def parse_categorization_result(json_text: str) -> dict[int, str]:
     try:
         categories_raw = json.loads(json_text)
     except json.JSONDecodeError as e:
@@ -131,7 +131,7 @@ def parse_categorization_result(json_text):
     print("DEBUG: parsed categories:", result) #DEBUG
     return result
 
-def categorise_with_claude(transactions, category_names):
+def categorise_with_claude(transactions: list[dict], category_names: list[str]) -> dict[int, str]:
     """Main function - orchestrates the others."""
     system_prompt = build_system_prompt(category_names)
     user_prompt = build_user_prompt(transactions)

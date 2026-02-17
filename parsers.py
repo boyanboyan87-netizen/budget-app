@@ -3,7 +3,7 @@ import pandas as pd
 # ========================================
 # BANK STATEMENT PARSERS
 # ========================================
-def parse_amex(df):
+def parse_amex(df: pd.DataFrame) -> pd.DataFrame:
     """
     Takes a raw AMEX CSV DataFrame and returns a new DataFrame
     with standard columns: Date, Amount, Description, Account.
@@ -17,7 +17,7 @@ def parse_amex(df):
     standard['Account'] = 'AMEX'
     return standard
 
-def parse_barclays(df):
+def parse_barclays(df: pd.DataFrame) -> pd.DataFrame:
     """
     Barclays CSV → standard schema.
 
@@ -40,7 +40,7 @@ def parse_barclays(df):
 
     return standard
 
-def parse_revolut(df):
+def parse_revolut(df: pd.DataFrame) -> pd.DataFrame:
     """
     Revolut CSV → standard schema.
 

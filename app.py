@@ -38,6 +38,16 @@ app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 # Turn off a warning we don't need
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Connection pool configuration for concurrent users
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_size': 20,              # Always keep 20 connections open
+    'max_overflow': 30,           # Can create 30 more under load (50 total)
+    'pool_recycle': 3600,         # Recycle connections after 1 hour
+    'pool_pre_ping': True,        # Check connection is alive before using
+    'pool_timeout': 30,           # Wait up to 30s for available connection
+}
+
+
 # Connect our database to Flask
 db.init_app(app)
 
@@ -48,7 +58,7 @@ login_manager.login_view = 'auth.login'
 login_manager.login_message = 'Please log in to access this page'
 
 @login_manager.user_loader
-def load_user(user_id):
+def load_user(user_id: str) -> User | None:
     return User.query.get(int(user_id))
 
 # Initialize OAuth
@@ -73,11 +83,7 @@ with app.app_context():
     # db.drop_all() #TODO - remove this after first run
     db.create_all()
 
-with app.app_context():
-    # db.drop_all() #TODO - remove this after first run
-    db.create_all()
-
-def get_all_routes():
+def get_all_routes() -> list[dict]:
     """
     Helper: returns a list of all routes for display on the home page.
     Each item is a dict with rule, endpoint, and methods.
@@ -120,9 +126,9 @@ def home():
     """
     all_routes = get_all_routes()
 
-    total_tx = Transaction.query.count()
-    uncategorised_tx = Transaction.query.filter(
-        Transaction.category.is_(None)
+    total_tx = Transaction.query.for_current_user().count()
+    uncategorised_tx = Transaction.query.for_current_user().filter(
+        Transaction.category_id.is_(None)
     ).count()
 
     return render_template(
@@ -142,6 +148,7 @@ def db_info():
     }
     
 @app.route("/upload-csv", methods=["GET", "POST"])
+@login_required 
 def upload_csv():
     """
     - GET  -> show the HTML form so the user can choose a CSV file
@@ -159,7 +166,7 @@ def upload_csv():
         standard_df = parse_bank_dataframe(df, request.form.get("bank"))
 
         # 3) Build Transaction objects (including guess_category_from_history)
-        created_transactions = build_transactions_from_df(standard_df)
+        created_transactions = build_transactions_from_df(standard_df, current_user.id)
 
         # 4) Save all or none
         save_transactions(created_transactions)
@@ -180,6 +187,7 @@ def upload_csv():
     return redirect(url_for("review_last_upload"))
 
 @app.route("/review-last-upload", methods=["GET"])
+@login_required
 def review_last_upload():
     """
     Show the transactions from the most recent upload,
@@ -193,7 +201,7 @@ def review_last_upload():
     
     # Fetch those transactions from the DB, newest first by date
     transactions = (
-        Transaction.query
+        Transaction.query.for_current_user()
         .filter(Transaction.id.in_(last_ids))
         .order_by(Transaction.date.desc(), Transaction.id.desc())
         .all()
@@ -213,6 +221,7 @@ def review_last_upload():
     )
     
 @app.route("/update-categories", methods=["POST"])
+@login_required
 def update_categories():
     """
     Update categories for the transactions in the last upload.
@@ -225,7 +234,7 @@ def update_categories():
         return redirect(url_for("upload_csv"))
 
     # Fetch the transactions again
-    transactions = Transaction.query.filter(
+    transactions = Transaction.query.for_current_user().filter(
         Transaction.id.in_(last_ids)
     ).all()
 
@@ -287,25 +296,27 @@ def update_categories():
     return redirect(url_for("review_last_upload"))
 
 @app.route('/transactions')
+@login_required
 def list_transactions():
     """
     HTML view: shows all transactions in a table (newest first).
     """
     # Query all transactions, newest first
-    all_tx = Transaction.query.order_by(Transaction.date.desc()).all()
+    all_tx = Transaction.query.for_current_user().order_by(Transaction.date.desc()).all()
 
     # Render an HTML template and pass the transactions to it
     return render_template('transactions.html', transactions=all_tx)
 
 @app.route('/uncategorised')
+@login_required
 def uncategorised_transactions():
     """
     Returns all transactions that are not yet categorised.
     This is what we will send to Claude
     """
 
-    uncats = Transaction.query.filter(
-        Transaction.category.is_(None)
+    uncats = Transaction.query.for_current_user().filter(
+        Transaction.category_id.is_(None)
     ).order_by(Transaction.date.desc()).all()
 
     result = []
@@ -322,24 +333,26 @@ def uncategorised_transactions():
     return jsonify(result)
     
 @app.route('/uncategorised-view')
+@login_required
 def uncategorised_view():
     """
     HTML page showing uncategorised transactions in a table.
     Good for visually checking what will be sent to Claude.
     """
-    uncats = Transaction.query.filter(Transaction.category == None).order_by(
+    uncats = Transaction.query.for_current_user().filter(Transaction.category_id.is_(None)).order_by(
         Transaction.date.desc()
     ).all()
 
     return render_template('uncategorised.html', transactions=uncats)    
 
 @app.route("/categorise-batch")
+@login_required
 def categorise_batch():
     print("DEBUG: /categorise-batch called") #DEBUG
 
     # 1) Get uncategorised transactions using SQLAlchemy
-    uncats = Transaction.query.filter(
-        Transaction.category.is_(None)
+    uncats = Transaction.query.for_current_user().filter(
+        Transaction.category_id.is_(None)
     ).order_by(Transaction.date.desc()).all()
 
     print(f"DEBUG: found {len(uncats)} uncategorised transactions") #DEBUG

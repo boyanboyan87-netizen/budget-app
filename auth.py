@@ -1,7 +1,7 @@
 """Google OAuth authentication using authlib"""
 import os
-from flask import Blueprint, redirect, url_for, session, flash
-from flask_login import login_user, logout_user, current_user
+from flask import Blueprint, redirect, url_for, flash
+from flask_login import login_user, logout_user
 from authlib.integrations.flask_client import OAuth
 from models import db, User, SocialAuth 
 

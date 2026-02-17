@@ -6,7 +6,6 @@ import re
 import pandas as pd
 
 # Local
-from claude_client import categorise_with_claude
 from models import db, Transaction, Category
 from parsers import parse_amex, parse_barclays, parse_revolut
 
@@ -14,7 +13,7 @@ from parsers import parse_amex, parse_barclays, parse_revolut
 # Only allow CSV files for now
 ALLOWED_EXTENSIONS = {'csv'}
 
-def allowed_file(filename):
+def allowed_file(filename: str) -> bool:
     """
     Helper function: checks that the uploaded file has a .csv extension.
     """
@@ -49,7 +48,7 @@ def normalise_description(description: str) -> str:
 
     return text
 
-def guess_category_from_history(description: str) -> str | None:
+def guess_category_from_history(description: str, user_id: int) -> str | None:
     norm = normalise_description(description)
     if not norm:
         return None
@@ -58,9 +57,9 @@ def guess_category_from_history(description: str) -> str | None:
         Transaction.query
         .filter(
             Transaction.normalised_description == norm,
-            Transaction.category.isnot(None)
+            Transaction.category.isnot(None),
+            Transaction.user_id == user_id
         )
-        
         .all()
     )
 
@@ -73,13 +72,13 @@ def guess_category_from_history(description: str) -> str | None:
 
     return counts.most_common(1)[0][0]
 
-def get_all_category_names():
+def get_all_category_names() -> list[str]:
     """
     Return a list of all category names currently in the database, for display in dropdowns.
     """
-    return [c.name for c in Category.query.order_by(Category.name).all()]
+    return [c.name for c in Category.query.for_current_user().order_by(Category.name).all()]
 
-def build_claude_payload(transactions):
+def build_claude_payload(transactions: list[Transaction]) -> list[dict]:
     """
     Given a list of Transaction objects, build the payload we will send to Claude.
     """
@@ -96,7 +95,7 @@ def build_claude_payload(transactions):
         )
     return payload
 
-def load_uploaded_csv(request):
+def load_uploaded_csv(request) -> pd.DataFrame:
     """
     Validate the uploaded file and return a Pandas DataFrame.
     Raises ValueError with a user-friendly message on problems.
@@ -119,7 +118,7 @@ def load_uploaded_csv(request):
         file.stream.seek(0)
         return pd.read_csv(file, encoding="latin-1")
 
-def parse_bank_dataframe(df, bank):
+def parse_bank_dataframe(df: pd.DataFrame, bank: str) -> pd.DataFrame:
     """
     Given the raw CSV DataFrame and a bank identifier string,
     return a standardised DataFrame with Date, Amount, Description, Account.
@@ -136,7 +135,7 @@ def parse_bank_dataframe(df, bank):
     else:
         raise ValueError(f"Unknown bank type: {bank}")
 
-def build_transactions_from_df(standard_df):
+def build_transactions_from_df(standard_df: pd.DataFrame, user_id: int) -> list[Transaction]:
     """
     Turn the standardised DataFrame into a list of Transaction objects.
     Uses guess_category_from_history to auto-fill category when possible.
@@ -155,10 +154,11 @@ def build_transactions_from_df(standard_df):
                 description=description,
                 account=str(row["Account"]),
                 normalised_description=normalised,
+                user_id=user_id,
             )
 
             # Try to reuse past categorizations
-            guessed = guess_category_from_history(description)
+            guessed = guess_category_from_history(description, user_id)
             if guessed is not None:
                 tx.category = guessed
 
@@ -170,7 +170,7 @@ def build_transactions_from_df(standard_df):
 
     return created
 
-def save_transactions(transactions):
+def save_transactions(transactions: list[Transaction]) -> None:
     """
     Save a list of Transaction objects in an all-or-nothing way.
     Rolls back on any error and raises ValueError with a user-friendly message.
