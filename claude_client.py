@@ -1,5 +1,5 @@
 # claude_client.py
-
+import re
 import os
 import json
 from anthropic import Anthropic
@@ -13,25 +13,20 @@ if not api_key:
 
 client = Anthropic(api_key=api_key)
 
-
-def categorise_with_claude(transactions, category_names):
-    """
-    Ask Claude to categorise a list of transactions.
-
-    Returns: dict[int, str] mapping transaction id -> category
-    """
-    print(f"DEBUG: categorise_with_claude called with {len(transactions)} txs") #DEBUG
-
+def build_system_prompt(category_names):
+    """Build the system prompt with allowed categories."""
     category_list_str = ", ".join(category_names)
 
     system_prompt = (
-        "You are an assistant that categorises bank transactions for personal budgeting.\n"
-        "Return a JSON object mapping transaction id to a short category string.\n"
-        "Important: respond with JSON only, no explanations, no markdown code fences.\n"
-        f"Use ONLY these categories: {category_list_str}.\n"
-        "If unsure, pick the closest match from this list.\n"
-    )
+            "You are an assistant that categorises bank transactions for personal budgeting.\n"
+            "Return a JSON object mapping transaction id to a short category string.\n"
+            "Important: respond with JSON only, no explanations, no markdown code fences.\n"
+            f"Use ONLY these categories: {category_list_str}.\n"
+            "If unsure, pick the closest match from this list.\n"
+        )
+    return system_prompt
 
+def build_user_prompt(transactions):
     # Build the user prompt with one transaction per line
     lines = []
     for tx in transactions:
@@ -54,8 +49,13 @@ def categorise_with_claude(transactions, category_names):
         '{ "123": "Groceries", "124": "Rent" }'
     )
 
-    print("DEBUG: sending prompt to Claude...") #DEBUG
+    return user_prompt
 
+def call_claude_api(system_prompt, user_prompt):
+    """Call Claude API and return raw response text."""
+
+    print("DEBUG: sending prompt to Claude...") #DEBUG
+    
     try:
         response = client.messages.create(
             model="claude-haiku-4-5-20251001",
@@ -68,18 +68,21 @@ def categorise_with_claude(transactions, category_names):
     except Exception as e:
         print("DEBUG: Claude API call raised:", repr(e)) #DEBUG
         raise
-
+    
     print("DEBUG: got response from Claude") #DEBUG
-
-    # Concatenate all text blocks
+    
+    # Extract text from response
     text = ""
     for block in response.content:
         if block.type == "text":
             text += block.text
-
+    
     print("DEBUG: raw Claude text:", repr(text)) #DEBUG
+    return text
 
-# ---- CLEAN THE TEXT INTO PURE JSON ----
+
+def clean_json_response(text):
+    """Strip markdown fences and repair malformed JSON."""
     text_clean = text.strip()
 
     # 1) Strip ```json fences if present
@@ -91,16 +94,12 @@ def categorise_with_claude(transactions, category_names):
             lines = lines[:-1]  # drop last line if it's a closing fence
         text_clean = "\n".join(lines).strip()
 
-    print("DEBUG: cleaned Claude text:", repr(text_clean)) #DEBUG
-
-    # 2) Regex-based repair: keep only well-formed `"id": "Category"` pairs
-    import re
+    # 2) Regex-based repair: keep only well-formed pairs  <-- ADD FROM HERE
     pattern = r'"(\d+)"\s*:\s*"[^\n"]*"'
     matches = list(re.finditer(pattern, text_clean))
     if matches:
         last_match = matches[-1]
         end_pos = last_match.end()
-        # Keep from first '{' to end of last valid pair, rebuild object
         start_brace = text_clean.find("{")
         if start_brace != -1:
             trimmed_body = text_clean[start_brace + 1 : end_pos]
@@ -108,16 +107,19 @@ def categorise_with_claude(transactions, category_names):
             print("DEBUG: repaired JSON:", repr(repaired)) #DEBUG
             text_clean = repaired
     else:
-        print("DEBUG: regex repair found no matches, using original text") #DEBUG
+        print("DEBUG: regex repair found no matches") #DEBUG
 
-    # 3) Parse JSON directly; let json.loads be the judge
+    print("DEBUG: cleaned Claude text:", repr(text_clean)) #DEBUG
+    return text_clean
+
+def parse_categorization_result(json_text):
     try:
-        categories_raw = json.loads(text_clean)
+        categories_raw = json.loads(json_text)
     except json.JSONDecodeError as e:
         print("DEBUG: JSON decode error even after regex repair:", e) #DEBUG
-        raise ValueError(f"Claude returned invalid JSON: {text_clean}")
+        raise ValueError(f"Claude returned invalid JSON: {json_text}")
 
-    # 4) Convert keys to ints and values to strings
+    # Convert keys to ints and values to strings
     result = {}
     for key, value in categories_raw.items():
         try:
@@ -128,3 +130,12 @@ def categorise_with_claude(transactions, category_names):
 
     print("DEBUG: parsed categories:", result) #DEBUG
     return result
+
+def categorise_with_claude(transactions, category_names):
+    """Main function - orchestrates the others."""
+    system_prompt = build_system_prompt(category_names)
+    user_prompt = build_user_prompt(transactions)
+    response = call_claude_api(system_prompt, user_prompt)
+    cleaned = clean_json_response(response)
+    return parse_categorization_result(cleaned)
+
