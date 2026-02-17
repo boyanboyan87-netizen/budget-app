@@ -1,45 +1,89 @@
-<!--
-This is a very simple HTML page with a form that lets you choose a CSV file
-and send it to the backend.
--->
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload Bank CSV</title>
-</head>
-<body>
-    <p><a href="{{ url_for('home') }}">← Back to home</a></p>
-    <h1>Upload a bank CSV file</h1>
+{% extends "base.html" %}
 
-    <!-- 
-    The form sends a POST request to /upload-csv
-    enctype="multipart/form-data" is REQUIRED for file uploads.
-    -->
+{% block title %}Upload CSV - Budget App{% endblock %}
+
+{% block extra_head %}
+<style>
+    .upload-form {
+        background: #f9f9f9;
+        padding: 30px;
+        border-radius: 8px;
+        max-width: 500px;
+        margin: 20px 0;
+    }
+    .form-group {
+        margin-bottom: 20px;
+    }
+    label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 8px;
+        color: #333;
+    }
+    select, input[type="file"] {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+    button[type="submit"] {
+        background: #667eea;
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 4px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    button[type="submit"]:hover {
+        background: #5568d3;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 20px;">
+  <a href="{{ url_for('home') }}" style="text-decoration: none; color: #667eea; font-weight: bold;">
+    ← Back to Dashboard
+  </a>
+</div>
+
+<h1>Upload Bank CSV File</h1>
+<p>Select your bank and choose a CSV file to import transactions.</p>
+
+<div class="upload-form">
     <form action="/upload-csv" method="post" enctype="multipart/form-data">
-        <!-- Select which bank this CSV is from -->
-        <label for="bank">Bank:</label>
-        <select name="bank" id="bank" required>
-            <option value="">-- Select bank --</option>
-            <option value="amex">AMEX</option>
-            <option value="barclays">Barclays</option>
-            <option value="revolut">Revolut</option>
-        </select>
-        <br><br>
+        <div class="form-group">
+            <label for="bank">Bank:</label>
+            <select name="bank" id="bank" required>
+                <option value="">-- Select your bank --</option>
+                <option value="amex">💳 AMEX</option>
+                <option value="barclays">🏦 Barclays</option>
+                <option value="revolut">🔷 Revolut</option>
+            </select>
+        </div>
 
-        <!-- File picker -->
-        <label for="file">CSV file:</label>
-        <input type="file" name="file" id="file" accept=".csv" required>
+        <div class="form-group">
+            <label for="file">CSV File:</label>
+            <input type="file" name="file" id="file" accept=".csv" required>
+        </div>
 
-        <!-- Submit button -->
-        <button type="submit">Upload</button>
+        <button type="submit">📤 Upload Transactions</button>
     </form>
+</div>
 
-    {% if message %}
-        <p>{{ message }}</p>
-    {% endif %}
-</body>
+{% if message %}
+<div style="margin-top: 20px; padding: 15px; background: #fee; border-left: 4px solid #c00; color: #c00;">
+    {{ message }}
+</div>
+{% endif %}
 
-
-</html>
+<div style="margin-top: 30px;">
+  <a href="{{ url_for('home') }}" style="text-decoration: none; color: #667eea; font-weight: bold;">
+    ← Back to Dashboard
+  </a>
+</div>
+{% endblock %}

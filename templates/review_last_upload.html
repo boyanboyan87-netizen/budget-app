@@ -1,67 +1,65 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Review Last Upload</title>
-        <p><a href="{{ url_for('home') }}">← Back to home</a></p>
-  </head>
-  <body>
-    <h1>Review Last Upload</h1>
+{% extends "base.html" %}
 
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <ul>
-          {% for m in messages %}
-            <li>{{ m }}</li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-    {% endwith %}
+{% block title %}Review Last Upload - Budget App{% endblock %}
 
-    <form method="post" action="{{ url_for('update_categories') }}">
-      <table border="1" cellpadding="4" cellspacing="0">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Description</th>
-            <th>Account</th>
-            <th>Amount</th>
-            <th>Category</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for tx in transactions %}
-          <tr>
-            <td>{{ tx.date }}</td>
-            <td>{{ tx.description }}</td>
-            <td>{{ tx.account }}</td>
-            <td>{{ "%.2f"|format(tx.amount) }}</td>
-            <td>
-              <select name="category_{{ tx.id }}" aria-label="Category for {{ tx.description }}">
-                <option value="">Uncategorised</option>
-                {% for name in category_names %}
-                  <option value="{{ name }}" {% if tx.category == name %}selected{% endif %}>
-                    {{ name }}
-                  </option>
-                {% endfor %}
-              </select>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+{% block content %}
+<div style="margin-bottom: 20px;">
+  <a href="{{ url_for('home') }}" style="text-decoration: none; color: #667eea; font-weight: bold;">
+    ← Back to Dashboard
+  </a>
+</div>
 
-      <p>
-        <button type="submit" name="action" value="save">Save category changes</button>
-        <button type="submit" name="action" value="send_to_claude">
-          Save & send uncategorised to Claude
-        </button>
-        <button type="submit" name="action" value="reset_to_uncategorised">
-          Set all to Uncategorised
-        </button>
-</p>
+<h1>Review Last Upload</h1>
 
-    </form>
-  </body>
-</html>
+<form method="post" action="{{ url_for('update_categories') }}">
+  <table border="1" cellpadding="4" cellspacing="0">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Description</th>
+        <th>Account</th>
+        <th>Amount</th>
+        <th>Category</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for tx in transactions %}
+      <tr>
+        <td>{{ tx.date }}</td>
+        <td>{{ tx.description }}</td>
+        <td>{{ tx.account }}</td>
+        <td>{{ "%.2f"|format(tx.amount) }}</td>
+        <td>
+          <select name="category_{{ tx.id }}" aria-label="Category for {{ tx.description }}">
+            <option value="">Uncategorised</option>
+            {% for name in category_names %}
+              <option value="{{ name }}" {% if tx.category == name %}selected{% endif %}>
+                {{ name }}
+              </option>
+            {% endfor %}
+          </select>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <p style="margin-top: 20px;">
+    <button type="submit" name="action" value="save" style="padding: 8px 16px; margin-right: 10px;">
+      💾 Save Changes
+    </button>
+    <button type="submit" name="action" value="send_to_claude" style="padding: 8px 16px; margin-right: 10px;">
+      🤖 Save & Send to Claude
+    </button>
+    <button type="submit" name="action" value="reset_to_uncategorised" style="padding: 8px 16px;">
+      🔄 Reset All
+    </button>
+  </p>
+</form>
+
+<div style="margin-top: 20px;">
+  <a href="{{ url_for('home') }}" style="text-decoration: none; color: #667eea; font-weight: bold;">
+    ← Back to Dashboard
+  </a>
+</div>
+{% endblock %}

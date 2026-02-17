@@ -1,35 +1,77 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Uncategorised Transactions</title>
-</head>
-<body>
-    <p><a href="{{ url_for('home') }}">← Back to home</a></p>
-    <h1>Uncategorised Transactions</h1>
+{% extends "base.html" %}
 
-    <table border="1" cellpadding="4" cellspacing="0">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Date</th>
-                <th>Account</th>
-                <th>Description</th>
-                <th>Amount</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for tx in transactions %}
-            <tr>
-                <td>{{ tx.id }}</td>
-                <td>{{ tx.date }}</td>
-                <td>{{ tx.account }}</td>
-                <td>{{ tx.description }}</td>
-                <td>{{ tx.amount }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</body>
-</html>
+{% block title %}Uncategorised Transactions - Budget App{% endblock %}
+
+{% block extra_head %}
+<style>
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 20px;
+    }
+    th, td {
+        border: 1px solid #ddd;
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+    th {
+        background-color: #667eea;
+        color: white;
+        text-align: left;
+        font-weight: bold;
+    }
+    tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+    tr:hover {
+        background-color: #f0f0f0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 20px;">
+  <a href="{{ url_for('home') }}" style="text-decoration: none; color: #667eea; font-weight: bold;">
+    ← Back to Dashboard
+  </a>
+</div>
+
+<h1>Uncategorised Transactions</h1>
+<p>These transactions need categorization. Total: {{ transactions|length }}</p>
+
+{% if transactions %}
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Date</th>
+            <th>Account</th>
+            <th>Description</th>
+            <th>Amount</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for tx in transactions %}
+        <tr>
+            <td>{{ tx.id }}</td>
+            <td>{{ tx.date }}</td>
+            <td>{{ tx.account }}</td>
+            <td>{{ tx.description }}</td>
+            <td style="text-align: right;">£{{ '%.2f'|format(tx.amount) }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p style="color: #060; font-weight: bold;">✅ All transactions are categorised!</p>
+{% endif %}
+
+<div style="margin-top: 20px;">
+  <a href="{{ url_for('categorise_batch') }}" style="text-decoration: none; padding: 10px 20px; background: #667eea; color: white; border-radius: 4px; display: inline-block;">
+    🤖 Auto-categorize with Claude
+  </a>
+  <a href="{{ url_for('home') }}" style="text-decoration: none; color: #667eea; font-weight: bold; margin-left: 20px;">
+    ← Back to Dashboard
+  </a>
+</div>
+{% endblock %}

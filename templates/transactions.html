@@ -1,60 +1,74 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>All Transactions</title>
-    <p><a href="{{ url_for('home') }}">← Back to home</a></p>
-    <style>
-        table {
-            border-collapse: collapse;
-            width: 100%;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 6px 8px;
-            font-size: 14px;
-        }
-        th {
-            background-color: #f4f4f4;
-            text-align: left;
-        }
-        tr:nth-child(even) {
-            background-color: #fafafa;
-        }
-    </style>
-</head>
-<body>
-    <h1>All Transactions</h1>
-    <p>Newest transactions are shown first.</p>
+{% extends "base.html" %}
 
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Date</th>
-                <th>Amount</th>
-                <th>Description</th>
-                <th>Normalised Description</th>
-                <th>Account</th>
-                <th>Category</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for t in transactions %}
-            <tr>
-                <td>{{ t.id }}</td>
-                <td>{{ t.date.strftime('%Y-%m-%d') if t.date else '' }}</td>
-                <td>{{ '%.2f'|format(t.amount) }}</td>
-                <td>{{ t.description }}</td>
-                <td>{{ t.normalised_description }}</td>
-                <td>{{ t.account }}</td>
-                <td>{{ t.category or '' }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+{% block title %}All Transactions - Budget App{% endblock %}
 
-    <p><a href="{{ url_for('home') }}">Back to home</a></p>
-</body>
-</html>
+{% block extra_head %}
+<style>
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 20px;
+    }
+    th, td {
+        border: 1px solid #ddd;
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+    th {
+        background-color: #667eea;
+        color: white;
+        text-align: left;
+        font-weight: bold;
+    }
+    tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+    tr:hover {
+        background-color: #f0f0f0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 20px;">
+  <a href="{{ url_for('home') }}" style="text-decoration: none; color: #667eea; font-weight: bold;">
+    ← Back to Dashboard
+  </a>
+</div>
+
+<h1>All Transactions</h1>
+<p>Newest transactions shown first. Total: {{ transactions|length }}</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Date</th>
+            <th>Amount</th>
+            <th>Description</th>
+            <th>Normalised</th>
+            <th>Account</th>
+            <th>Category</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for t in transactions %}
+        <tr>
+            <td>{{ t.id }}</td>
+            <td>{{ t.date.strftime('%Y-%m-%d') if t.date else '' }}</td>
+            <td style="text-align: right;">£{{ '%.2f'|format(t.amount) }}</td>
+            <td>{{ t.description }}</td>
+            <td>{{ t.normalised_description or '-' }}</td>
+            <td>{{ t.account }}</td>
+            <td>{{ t.category or '❓ Uncategorised' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div style="margin-top: 20px;">
+  <a href="{{ url_for('home') }}" style="text-decoration: none; color: #667eea; font-weight: bold;">
+    ← Back to Dashboard
+  </a>
+</div>
+{% endblock %}

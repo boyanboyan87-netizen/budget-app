@@ -1,14 +1,17 @@
 # Standard library
-from datetime import datetime
+from datetime import timedelta
 import os
 
 # Third‑party
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request, render_template, flash, redirect, url_for, session  
+from flask_login import LoginManager, login_required, current_user
 
 # Local
 from claude_client import categorise_with_claude
-from models import db, Transaction
+from models import db, Transaction, User
+from auth import auth_bp, init_oauth
+
 from helpers import (
     get_all_category_names,
     build_claude_payload,
@@ -37,6 +40,39 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Connect our database to Flask
 db.init_app(app)
+
+# Initialize Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'auth.login'
+login_manager.login_message = 'Please log in to access this page'
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+# Initialize OAuth
+init_oauth(app)
+
+# Register auth blueprint
+app.register_blueprint(auth_bp)
+
+# Session configuration
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
+
+# For development only - remove in production
+if os.getenv('FLASK_ENV') == 'development':
+    app.config['SESSION_COOKIE_SECURE'] = False
+else:
+    app.config['SESSION_COOKIE_SECURE'] = True
+
+# Continue with existing code...
+with app.app_context():
+    # db.drop_all() #TODO - remove this after first run
+    db.create_all()
+
 with app.app_context():
     # db.drop_all() #TODO - remove this after first run
     db.create_all()
@@ -77,6 +113,7 @@ with app.app_context():
 # ========================================
 
 @app.route("/")
+@login_required
 def home():
     """
     Home page: shows main navigation links and some quick stats.

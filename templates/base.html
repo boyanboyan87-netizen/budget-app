@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Budget App{% endblock %}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+        }
+        .nav {
+            background: #667eea;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .nav h1 { margin: 0; font-size: 20px; }
+        .nav .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .nav a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        .nav a:hover { background: rgba(255,255,255,0.3); }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .flash-messages { margin-bottom: 20px; }
+        .flash {
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .flash.error { background: #fee; color: #c00; border-left: 4px solid #c00; }
+        .flash.success { background: #efe; color: #060; border-left: 4px solid #060; }
+        .flash.info { background: #eef; color: #006; border-left: 4px solid #006; }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <div class="nav">
+        <h1>💰 Budget App</h1>
+        {% if current_user.is_authenticated %}
+        <div class="user-info">
+            <span>{{ current_user.name or current_user.email }}</span>
+            <a href="{{ url_for('auth.logout') }}">Logout</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>
