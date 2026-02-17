@@ -4,8 +4,9 @@ and send it to the backend.
 -->
 <!DOCTYPE html>
 <html lang="en">
-<head>
+  <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upload Bank CSV</title>
 </head>
 <body>
@@ -28,7 +29,8 @@ and send it to the backend.
         <br><br>
 
         <!-- File picker -->
-        <input type="file" name="file" accept=".csv" required>
+        <label for="file">CSV file:</label>
+        <input type="file" name="file" id="file" accept=".csv" required>
 
         <!-- Submit button -->
         <button type="submit">Upload</button>
