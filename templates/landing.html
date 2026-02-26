@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Welcome to Budget App</h1>
+<p>Track and categorise your spending with ease.</p>
+
+<a href="{{ url_for('auth.login') }}">Sign in with Google</a>
+{% endblock %}
