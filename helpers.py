@@ -173,7 +173,7 @@ def build_transactions_from_df(standard_df: pd.DataFrame, user_id: int) -> list[
 
 def build_transactions_from_plaid(
     plaid_txs: list,
-    account_map: dict[str, str],  # plaid_account_id → human-readable name
+    account_map: dict[str, int],  # plaid_account_id → Account.id
     user_id: int
 ) -> list:
     # Fetch all already-imported Plaid transaction IDs for this user
@@ -199,7 +199,7 @@ def build_transactions_from_plaid(
             date=pt["date"],
             amount=pt["amount"],       # Positive = debit (same convention as CSV imports)
             description=description[:200],
-            account=account_map.get(pt["account_id"], pt["account_id"])[:50],
+            account_id=account_map.get(pt["account_id"]),
             normalised_description=normalise_description(description),
             plaid_transaction_id=tx_id,  # Store for future dedup
         )

@@ -38,20 +38,28 @@
       </div>
 
       {% if item.accounts %}
-        <table style="width: 100%; border-collapse: collapse; margin-top: 14px;">
+        <table style="width: 100%; border-collapse: collapse; margin-top: 14px; table-layout: fixed;">
           <thead>
             <tr style="font-size: 12px; color: #888; text-transform: uppercase;">
               <th style="padding: 6px; text-align: left;">Account</th>
               <th style="padding: 6px; text-align: left;">Type</th>
               <th style="padding: 6px; text-align: left;">Mask</th>
+              <th style="padding: 6px; text-align: right;">Current Balance</th>
             </tr>
           </thead>
           <tbody>
             {% for acct in item.accounts %}
               <tr style="border-top: 1px solid #eee;">
                 <td style="padding: 8px;">{{ acct.name }}</td>
-                <td style="padding: 8px; color: #666;">{{ acct.account_type }}</td>
+                <td style="padding: 8px; color: #666;">{{ acct.subtype }}</td>
                 <td style="padding: 8px; color: #666;">•••• {{ acct.mask }}</td>
+                <td style="padding: 8px; text-align: right;">
+                  {% if acct.latest_balance %}
+                    {{ acct.latest_balance.currency }} {{ "%.2f"|format(acct.latest_balance.current_balance|float) }}
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
               </tr>
             {% endfor %}
           </tbody>

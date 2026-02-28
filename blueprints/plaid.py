@@ -3,8 +3,9 @@ from datetime import datetime
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
 from flask_login import login_required, current_user
 
-from models import db, Transaction, PlaidItem, PlaidAccount
-from plaid_client import create_link_token, exchange_public_token, sync_transactions
+from models import db, Transaction, PlaidItem, Account, AccountBalance
+from plaid_client import create_link_token, exchange_public_token, sync_transactions, get_balances
+
 from helpers import build_transactions_from_plaid, save_transactions
 
 plaid_bp = Blueprint('plaid', __name__)
@@ -35,13 +36,14 @@ def plaid_exchange():
     db.session.flush()
 
     for acct in data.get("accounts", []):
-        account = PlaidAccount(
+        account = Account(
             user_id=current_user.id,
             item_id=item.id,
             plaid_account_id=acct["id"],
             name=acct["name"],
             mask=acct.get("mask"),
-            account_type=acct.get("type"),
+            account_type='automatic',        # hardcoded — all Plaid accounts are automatic
+            subtype=acct.get("type"),       # Plaid's type e.g. 'depository', 'credit'
         )
         db.session.add(account)
 
@@ -67,10 +69,24 @@ def plaid_sync():
 
     try:
         for item in items:
-            account_map = {a.plaid_account_id: a.name for a in item.accounts}
+            account_map = {a.plaid_account_id: a.id for a in item.accounts}     # now maps to id
             added, removed, next_cursor = sync_transactions(item)
             transactions = build_transactions_from_plaid(added, account_map, current_user.id)
             save_transactions(transactions)
+            balances = get_balances(item)
+
+            for b in balances:
+                db_id = account_map.get(b['plaid_account_id'])           
+                
+                if db_id:
+                    snapshot = AccountBalance(
+                        account_id=db_id,
+                        current_balance=b['current'],
+                        currency=b['currency'],
+                        recorded_at=datetime.utcnow(),
+                    )
+                    db.session.add(snapshot)
+            
             total_added += len(transactions)
 
             removed_ids = [r["transaction_id"] for r in removed]

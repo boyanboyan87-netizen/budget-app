@@ -7,6 +7,7 @@ from plaid.model.item_public_token_exchange_request import ItemPublicTokenExchan
 from plaid.model.transactions_sync_request import TransactionsSyncRequest
 from plaid.model.products import Products
 from plaid.model.country_code import CountryCode
+from plaid.model.accounts_balance_get_request import AccountsBalanceGetRequest
 
 
 def get_plaid_client() -> plaid_api.PlaidApi:
@@ -85,3 +86,19 @@ def sync_transactions(item) -> tuple[list, list, str]:
             break
 
     return added, removed, cursor
+
+
+
+def get_balances(item) -> list[dict]:
+    """Fetch current balances for all accounts in a PlaidItem."""
+    client = get_plaid_client()
+    request = AccountsBalanceGetRequest(access_token=item.access_token)
+    response = client.accounts_balance_get(request)
+    return [
+        {
+            'plaid_account_id': acct.account_id,
+            'current': float(acct.balances.current or 0),
+            'currency': acct.balances.iso_currency_code or 'GBP',
+        }
+        for acct in response.accounts
+    ]

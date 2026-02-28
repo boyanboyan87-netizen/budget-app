@@ -63,7 +63,7 @@ def create_app(config_override: dict | None = None) -> Flask:
 
     @login_manager.user_loader
     def load_user(user_id: str) -> User | None:
-        return User.query.get(int(user_id))
+        return db.session.get(User, int(user_id))
 
     init_oauth(app)
     app.register_blueprint(auth_bp)

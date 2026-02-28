@@ -55,7 +55,7 @@ class User(UserMixin, db.Model):
     categories = db.relationship('Category', backref='user', lazy=True, cascade='all, delete-orphan')
     social_auths = db.relationship('SocialAuth', backref='user', lazy=True, cascade='all, delete-orphan')
     plaid_items = db.relationship('PlaidItem', backref='user', lazy=True, cascade='all, delete-orphan')
-
+    accounts = db.relationship('Account', backref='owner', lazy=True, cascade='all, delete-orphan')
     
     def __repr__(self):
         return f'<User {self.email}>'
@@ -78,6 +78,7 @@ class Transaction(db.Model):
     
     # Relationships
     category_obj = db.relationship('Category', backref='transactions')
+    account_id = db.Column(db.Integer, db.ForeignKey('account.id'), nullable=True, index=True)
 
     @hybrid_property
     def category(self):
@@ -152,24 +153,60 @@ class PlaidItem(db.Model):
     last_synced_at = db.Column(db.DateTime, nullable=True)
 
     # Relationships
-    accounts = db.relationship('PlaidAccount', backref='item', lazy=True, cascade='all, delete-orphan')
+    accounts = db.relationship('Account', backref='item', lazy=True, cascade='all, delete-orphan')
 
     def __repr__(self):
         return f'<PlaidItem {self.institution_name} (user {self.user_id})>'
 
 
-class PlaidAccount(db.Model):
-    __tablename__ = "plaid_account"
+class Account(db.Model):
+    __tablename__ = "account"
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
-    item_id = db.Column(db.Integer, db.ForeignKey('plaid_item.id'), nullable=False)
-    plaid_account_id = db.Column(db.String(100), nullable=False)
-    name = db.Column(db.String(100))
-    mask = db.Column(db.String(10))
-    account_type = db.Column(db.String(50))
+    name = db.Column(db.String(100), nullable=False)
+    account_type = db.Column(db.String(20), nullable=False)  # 'automatic' | 'manual'
+    status = db.Column(db.String(20), nullable=False, default='active')  # 'active' | 'closed'
+    currency = db.Column(db.String(10), nullable=False, default='GBP')
+
+    # Plaid-specific (null for manual accounts)
+    plaid_account_id = db.Column(db.String(100), nullable=True)  # Plaid's string ID
+    item_id = db.Column(db.Integer, db.ForeignKey('plaid_item.id'), nullable=True)
+    mask = db.Column(db.String(10), nullable=True)
+    subtype = db.Column(db.String(50), nullable=True)  # e.g. 'depository', 'credit'
+    invert_amounts = db.Column(db.Boolean, nullable=True)  # True=flip amount signs on import, None=unknown
+
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    balance_history = db.relationship(
+        'AccountBalance',
+        backref='account',
+        order_by='AccountBalance.recorded_at.desc()',
+        cascade='all, delete-orphan',
+    )
+    transactions = db.relationship('Transaction', backref='account_obj', lazy=True)
+
+    @property
+    def latest_balance(self):
+        return self.balance_history[0] if self.balance_history else None
 
     def __repr__(self):
-        return f'<PlaidAccount {self.name} ...{self.mask}>'
+        return f'<Account {self.name} ({self.account_type})>'
 
 
+
+class AccountBalance(db.Model):
+    """Historical balance snapshot for a Accounts. Appended on each sync."""
+    __tablename__ = "account_balance"
+
+    id = db.Column(db.Integer, primary_key=True)
+    account_id = db.Column(
+        db.Integer,
+        db.ForeignKey('account.id', ondelete='CASCADE'),
+        nullable=False,
+        index=True,
+    )
+    current_balance = db.Column(db.Numeric(12, 2), nullable=False)
+    currency = db.Column(db.String(10), nullable=False, default='GBP')
+    recorded_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
