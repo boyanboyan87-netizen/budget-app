@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Connect a Bank - Budget App{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+<style>
+    .connect-box {
+        background: #f9f9f9;
+        padding: 30px;
+        border-radius: 8px;
+        max-width: 500px;
+        margin: 20px 0;
+    }
+    .btn-primary {
+        background: #667eea;
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 4px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    .btn-primary:hover { background: #5568d3; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 20px;">
+  <a href="{{ url_for('home') }}" style="text-decoration: none; color: #667eea; font-weight: bold;">
+    ← Back to Dashboard
+  </a>
+</div>
+
+<h1>Connect a Bank</h1>
+<p>Link your bank account to automatically import transactions.</p>
+
+<div class="connect-box">
+    <button id="connect-btn" class="btn-primary">🏦 Connect a Bank</button>
+</div>
+
+<script>
+document.getElementById('connect-btn').addEventListener('click', async function () {
+    // Step 1: Get a link_token from our backend
+    const res = await fetch('/plaid/link-token', { method: 'POST' });
+    const data = await res.json();
+
+    // Step 2: Open the Plaid Link modal
+    const handler = Plaid.create({
+        token: data.link_token,
+        onSuccess: async function (public_token, metadata) {
+            // Step 3: Exchange the public_token for an access_token
+            await fetch('/plaid/exchange', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    public_token: public_token,
+                    institution_name: metadata.institution.name,
+                    accounts: metadata.accounts,
+                }),
+            });
+            // Step 4: Redirect to accounts page
+            window.location.href = '/plaid/accounts';
+        },
+        onExit: function (err) {
+            if (err) console.error('Plaid Link error:', err);
+        },
+    });
+
+    handler.open();
+});
+</script>
+{% endblock %}

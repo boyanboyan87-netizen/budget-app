@@ -57,7 +57,7 @@ def guess_category_from_history(description: str, user_id: int) -> str | None:
         Transaction.query
         .filter(
             Transaction.normalised_description == norm,
-            Transaction.category.isnot(None),
+            Transaction.category_id.isnot(None),
             Transaction.user_id == user_id
         )
         .all()
@@ -169,6 +169,51 @@ def build_transactions_from_df(standard_df: pd.DataFrame, user_id: int) -> list[
             raise ValueError(f"Upload failed on row {idx + 1}: {e}")
 
     return created
+
+
+def build_transactions_from_plaid(
+    plaid_txs: list,
+    account_map: dict[str, str],  # plaid_account_id → human-readable name
+    user_id: int
+) -> list:
+    # Fetch all already-imported Plaid transaction IDs for this user
+    # This is our deduplication check — skip anything we've seen before
+    existing_ids = {
+        tx.plaid_transaction_id
+        for tx in Transaction.query.for_user(user_id)
+        .filter(Transaction.plaid_transaction_id.isnot(None)).all()
+    }
+
+    transactions = []
+    for pt in plaid_txs:
+        tx_id = pt["transaction_id"]
+
+        # Skip if already imported (e.g. sync ran twice)
+        if tx_id in existing_ids:
+            continue
+
+        description = pt["name"]  # Plaid's merchant/description field
+
+        tx = Transaction(
+            user_id=user_id,
+            date=pt["date"],
+            amount=pt["amount"],       # Positive = debit (same convention as CSV imports)
+            description=description[:200],
+            account=account_map.get(pt["account_id"], pt["account_id"])[:50],
+            normalised_description=normalise_description(description),
+            plaid_transaction_id=tx_id,  # Store for future dedup
+        )
+
+        # Try to reuse past categorizations
+        guessed = guess_category_from_history(description, user_id)
+        if guessed is not None:
+            tx.category = guessed
+
+        transactions.append(tx)
+
+    return transactions
+
+
 
 def save_transactions(transactions: list[Transaction]) -> None:
     """

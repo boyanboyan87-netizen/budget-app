@@ -53,6 +53,8 @@ class User(UserMixin, db.Model):
     transactions = db.relationship('Transaction', backref='user', lazy=True, cascade='all, delete-orphan')
     categories = db.relationship('Category', backref='user', lazy=True, cascade='all, delete-orphan')
     social_auths = db.relationship('SocialAuth', backref='user', lazy=True, cascade='all, delete-orphan')
+    plaid_items = db.relationship('PlaidItem', backref='user', lazy=True, cascade='all, delete-orphan')
+
     
     def __repr__(self):
         return f'<User {self.email}>'
@@ -71,6 +73,7 @@ class Transaction(db.Model):
     account = db.Column(db.String(50), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     normalised_description = db.Column(db.String(200), nullable=True)
+    plaid_transaction_id = db.Column(db.String(100), nullable=True)
     
     # Relationships
     category_obj = db.relationship('Category', backref='transactions')
@@ -133,3 +136,39 @@ class Category(db.Model):
 
     def __repr__(self):
         return f"<Category {self.name}>"
+    
+
+class PlaidItem(db.Model):
+    __tablename__ = "plaid_item"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    access_token = db.Column(db.String(200), nullable=False)
+    item_id = db.Column(db.String(100), nullable=False)
+    institution_name = db.Column(db.String(100))
+    cursor = db.Column(db.String(200), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_synced_at = db.Column(db.DateTime, nullable=True)
+
+    # Relationships
+    accounts = db.relationship('PlaidAccount', backref='item', lazy=True, cascade='all, delete-orphan')
+
+    def __repr__(self):
+        return f'<PlaidItem {self.institution_name} (user {self.user_id})>'
+
+
+class PlaidAccount(db.Model):
+    __tablename__ = "plaid_account"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    item_id = db.Column(db.Integer, db.ForeignKey('plaid_item.id'), nullable=False)
+    plaid_account_id = db.Column(db.String(100), nullable=False)
+    name = db.Column(db.String(100))
+    mask = db.Column(db.String(10))
+    account_type = db.Column(db.String(50))
+
+    def __repr__(self):
+        return f'<PlaidAccount {self.name} ...{self.mask}>'
+
+

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Connected Banks - Budget App{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 20px;">
+  <a href="{{ url_for('home') }}" style="text-decoration: none; color: #667eea; font-weight: bold;">
+    ← Back to Dashboard
+  </a>
+</div>
+
+<h1>Connected Banks</h1>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for category, message in messages %}
+    <div style="padding: 12px; margin-bottom: 16px; border-left: 4px solid {% if category == 'danger' %}#c00{% else %}#2a2{% endif %}; background: {% if category == 'danger' %}#fee{% else %}#efe{% endif %};">
+      {{ message }}
+    </div>
+  {% endfor %}
+{% endwith %}
+
+{% if items %}
+  {% for item in items %}
+    <div style="background: #f9f9f9; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <strong>🏦 {{ item.institution_name }}</strong>
+          <span style="color: #888; font-size: 13px; margin-left: 12px;">
+            Last synced: {{ item.last_synced_at.strftime('%d %b %Y %H:%M') if item.last_synced_at else 'Never' }}
+          </span>
+        </div>
+        <form action="/plaid/sync" method="post">
+          <input type="hidden" name="item_id" value="{{ item.id }}">
+          <button type="submit" style="background: #667eea; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+            🔄 Sync Now
+          </button>
+        </form>
+      </div>
+
+      {% if item.accounts %}
+        <table style="width: 100%; border-collapse: collapse; margin-top: 14px;">
+          <thead>
+            <tr style="font-size: 12px; color: #888; text-transform: uppercase;">
+              <th style="padding: 6px; text-align: left;">Account</th>
+              <th style="padding: 6px; text-align: left;">Type</th>
+              <th style="padding: 6px; text-align: left;">Mask</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for acct in item.accounts %}
+              <tr style="border-top: 1px solid #eee;">
+                <td style="padding: 8px;">{{ acct.name }}</td>
+                <td style="padding: 8px; color: #666;">{{ acct.account_type }}</td>
+                <td style="padding: 8px; color: #666;">•••• {{ acct.mask }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+    </div>
+  {% endfor %}
+{% else %}
+  <p>No banks connected yet. <a href="{{ url_for('plaid_connect') }}">Connect one now →</a></p>
+{% endif %}
+
+<div style="margin-top: 20px;">
+  <a href="{{ url_for('plaid_connect') }}" style="text-decoration: none; color: #667eea; font-weight: bold;">
+    + Connect another bank
+  </a>
+</div>
+{% endblock %}
