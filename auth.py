@@ -45,12 +45,13 @@ def callback():
         if social_auth:
             # Existing user - log them in
             user = social_auth.user
-            flash(f'Welcome back, {user.name}!', 'success')
+            flash(f'Welcome back, {user.first_name}!', 'success')
         else:
             # New user - create account and link Google
             user = User(
                 email=user_info['email'],
-                name=user_info.get('name')
+                first_name=user_info.get('given_name', user_info.get('name', 'User')),
+                last_name=user_info.get('family_name')
             )
             db.session.add(user)
             db.session.flush()  # Get user.id without committing yet
@@ -68,7 +69,7 @@ def callback():
             from seed_data import seed_user_categories
             seed_user_categories(user.id)
 
-            flash(f'Welcome {user.name}! Your account has been created.', 'success')
+            flash(f'Welcome {user.first_name}! Your account has been created.', 'success')
 
         login_user(user)
         return redirect(url_for('home'))

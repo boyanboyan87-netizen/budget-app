@@ -60,7 +60,7 @@
         <h1>💰 Budget App</h1>
         {% if current_user.is_authenticated %}
         <div class="user-info">
-            <span>{{ current_user.name or current_user.email }}</span>
+            <span>{{ current_user.first_name or current_user.email }}</span>
             <a href="{{ url_for('auth.logout') }}">Logout</a>
         </div>
         {% endif %}
