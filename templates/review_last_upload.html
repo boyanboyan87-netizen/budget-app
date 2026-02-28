@@ -4,14 +4,14 @@
 
 {% block content %}
 <div style="margin-bottom: 20px;">
-  <a href="{{ url_for('home') }}" style="text-decoration: none; color: #667eea; font-weight: bold;">
+  <a href="{{ url_for('main.home') }}" style="text-decoration: none; color: #667eea; font-weight: bold;">
     ← Back to Dashboard
   </a>
 </div>
 
 <h1>Review Last Upload</h1>
 
-<form method="post" action="{{ url_for('update_categories') }}">
+<form method="post" action="{{ url_for('transactions.update_categories') }}">
   <table border="1" cellpadding="4" cellspacing="0">
     <thead>
       <tr>
@@ -58,7 +58,7 @@
 </form>
 
 <div style="margin-top: 20px;">
-  <a href="{{ url_for('home') }}" style="text-decoration: none; color: #667eea; font-weight: bold;">
+  <a href="{{ url_for('main.home') }}" style="text-decoration: none; color: #667eea; font-weight: bold;">
     ← Back to Dashboard
   </a>
 </div>

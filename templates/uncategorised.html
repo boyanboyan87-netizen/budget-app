@@ -31,7 +31,7 @@
 
 {% block content %}
 <div style="margin-bottom: 20px;">
-  <a href="{{ url_for('home') }}" style="text-decoration: none; color: #667eea; font-weight: bold;">
+  <a href="{{ url_for('main.home') }}" style="text-decoration: none; color: #667eea; font-weight: bold;">
     ← Back to Dashboard
   </a>
 </div>
@@ -67,10 +67,10 @@
 {% endif %}
 
 <div style="margin-top: 20px;">
-  <a href="{{ url_for('categorise_batch') }}" style="text-decoration: none; padding: 10px 20px; background: #667eea; color: white; border-radius: 4px; display: inline-block;">
+  <a href="{{ url_for('transactions.categorise_batch') }}" style="text-decoration: none; padding: 10px 20px; background: #667eea; color: white; border-radius: 4px; display: inline-block;">
     🤖 Auto-categorize with Claude
   </a>
-  <a href="{{ url_for('home') }}" style="text-decoration: none; color: #667eea; font-weight: bold; margin-left: 20px;">
+  <a href="{{ url_for('main.home') }}" style="text-decoration: none; color: #667eea; font-weight: bold; margin-left: 20px;">
     ← Back to Dashboard
   </a>
 </div>

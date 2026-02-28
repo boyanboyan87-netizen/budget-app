@@ -4,7 +4,7 @@
 
 {% block content %}
 <div style="margin-bottom: 20px;">
-  <a href="{{ url_for('home') }}" style="text-decoration: none; color: #667eea; font-weight: bold;">
+  <a href="{{ url_for('main.home') }}" style="text-decoration: none; color: #667eea; font-weight: bold;">
     ← Back to Dashboard
   </a>
 </div>
@@ -60,11 +60,11 @@
     </div>
   {% endfor %}
 {% else %}
-  <p>No banks connected yet. <a href="{{ url_for('plaid_connect') }}">Connect one now →</a></p>
+  <p>No banks connected yet. <a href="{{ url_for('plaid.plaid_connect') }}">Connect one now →</a></p>
 {% endif %}
 
 <div style="margin-top: 20px;">
-  <a href="{{ url_for('plaid_connect') }}" style="text-decoration: none; color: #667eea; font-weight: bold;">
+  <a href="{{ url_for('plaid.plaid_connect') }}" style="text-decoration: none; color: #667eea; font-weight: bold;">
     + Connect another bank
   </a>
 </div>

@@ -72,7 +72,7 @@ def callback():
             flash(f'Welcome {user.first_name}! Your account has been created.', 'success')
 
         login_user(user)
-        return redirect(url_for('home'))
+        return redirect(url_for('main.home'))
 
     except Exception as e:
         flash(f'Authentication failed: {str(e)}', 'error')
@@ -84,4 +84,4 @@ def logout():
     """Logout current user"""
     logout_user()
     flash('You have been logged out', 'info')
-    return redirect(url_for('landing'))
+    return redirect(url_for('main.landing'))
