@@ -38,7 +38,7 @@ def plaid_exchange():
     for acct in data.get("accounts", []):
         account = Account(
             user_id=current_user.id,
-            item_id=item.id,
+            plaid_item_id=item.id,
             plaid_account_id=acct["id"],
             name=acct["name"],
             mask=acct.get("mask"),
@@ -82,7 +82,6 @@ def plaid_sync():
                     snapshot = AccountBalance(
                         account_id=db_id,
                         current_balance=b['current'],
-                        currency=b['currency'],
                         recorded_at=datetime.utcnow(),
                     )
                     db.session.add(snapshot)

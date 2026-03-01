@@ -4,6 +4,7 @@
 - **TEACH, don't do** — explain concepts, guide me to implement myself
 - **Do NOT make code changes** unless I explicitly ask
 - Keep responses **short and scannable** — use headings and bullet points
+- **Always include clickable line links** when referencing code — e.g. [parsers.py:17](parsers.py#L17)
 - Ensure best practices are followed
 
 ## Never Do (without explicit request)

@@ -7,7 +7,7 @@ import pandas as pd
 
 # Local
 from models import db, Transaction, Category
-from parsers import parse_amex, parse_barclays, parse_revolut
+from parsers import parse_standard_csv
 
 
 # Only allow CSV files for now
@@ -118,24 +118,7 @@ def load_uploaded_csv(request) -> pd.DataFrame:
         file.stream.seek(0)
         return pd.read_csv(file, encoding="latin-1")
 
-def parse_bank_dataframe(df: pd.DataFrame, bank: str) -> pd.DataFrame:
-    """
-    Given the raw CSV DataFrame and a bank identifier string,
-    return a standardised DataFrame with Date, Amount, Description, Account.
-    """
-    if not bank:
-        raise ValueError("Please select a bank")
-
-    if bank == "amex":
-        return parse_amex(df)
-    elif bank == "barclays":
-        return parse_barclays(df)
-    elif bank == "revolut":
-        return parse_revolut(df)
-    else:
-        raise ValueError(f"Unknown bank type: {bank}")
-
-def build_transactions_from_df(standard_df: pd.DataFrame, user_id: int) -> list[Transaction]:
+def build_transactions_from_df(standard_df: pd.DataFrame, user_id: int, account_id: int, account_name: str) -> list[Transaction]:
     """
     Turn the standardised DataFrame into a list of Transaction objects.
     Uses guess_category_from_history to auto-fill category when possible.
@@ -152,7 +135,8 @@ def build_transactions_from_df(standard_df: pd.DataFrame, user_id: int) -> list[
                 date=row["Date"],
                 amount=float(row["Amount"]),
                 description=description,
-                account=str(row["Account"]),
+                account=account_name,       # legacy string field (temporary)
+                account_id=account_id,      # new FK
                 normalised_description=normalised,
                 user_id=user_id,
             )

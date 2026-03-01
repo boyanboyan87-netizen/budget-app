@@ -1,88 +1,31 @@
 import pandas as pd
 
-# ========================================
-# BANK STATEMENT PARSERS
-# ========================================
-def parse_amex(df: pd.DataFrame) -> pd.DataFrame:
+
+def parse_standard_csv(df: pd.DataFrame, invert_amounts: bool | None) -> pd.DataFrame:
     """
-    Takes a raw AMEX CSV DataFrame and returns a new DataFrame
-    with standard columns: Date, Amount, Description, Account.
+    Parse a standard-format CSV into a normalised DataFrame.
+
+    Expected columns: Date (DD-MM-YYYY), Amount, Description, Reference (optional)
+    Returns columns:  Date, Amount, Description
     """
-    # Example: suppose AMEX CSV has columns:
-    # 'Date', 'Description', 'Amount'
-    standard = pd.DataFrame()
-    standard['Date'] = pd.to_datetime(df['Date'], dayfirst=True).dt.date
-    standard['Description'] = df['Description'].astype(str)
-    standard['Amount'] = df['Amount'].astype(float)
-    standard['Account'] = 'AMEX'
-    return standard
+    required = {"Date", "Amount", "Description"}
+    missing = required - set(df.columns)
+    if missing:
+        raise ValueError(f"CSV is missing required columns: {', '.join(missing)}")
 
-def parse_barclays(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Barclays CSV → standard schema.
+    result = pd.DataFrame()
+    result["Date"] = pd.to_datetime(df["Date"], format="%d/%m/%Y")
+    result["Amount"] = df["Amount"].astype(float)
+    result["Description"] = df["Description"].astype(str).str.strip()
 
-    Input columns:
-    - Number
-    - Date           (e.g. '05/02/2026')
-    - Account        (e.g. '20-17-92 73108694')
-    - Amount         (e.g. -32.99)
-    - Subcategory    (e.g. 'Debit' or 'Direct Debit')
-    - Memo           (e.g. 'THE EGGFREE CAKEBO    ON 04 FEB CPM')
-    """
+    # Append Reference to Description if the column exists and is non-empty
+    if "Reference" in df.columns:
+        ref = df["Reference"].astype(str).str.strip()
+        mask = ref.notna() & (ref != "") & (ref != "nan")
+        result.loc[mask, "Description"] = result.loc[mask, "Description"] + " | " + ref[mask]
 
-    # Create a new empty DataFrame that will hold ONLY our standard columns
-    standard = pd.DataFrame()
+    # Flip signs if expenses are stored as negatives in the file
+    if invert_amounts is True:
+        result["Amount"] = result["Amount"] * -1
 
-    standard['Date'] = pd.to_datetime(df['Date'], dayfirst=True).dt.date
-    standard['Amount'] = df['Amount'].astype(float)
-    standard['Description'] = df['Memo'].astype(str)
-    standard['Account'] = 'BARCLAYS'
-
-    return standard
-
-def parse_revolut(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Revolut CSV → standard schema.
-
-    Input columns (from your example):
-    - Type
-    - Product
-    - Completed Date
-    - Description   
-    - Amount           
-    - Fee
-    - Currency         
-    - State            (we only want rows where State == 'COMPLETED')
-    - Balance
-    """
-    # Clean the data first
-    df_clean = df[
-        (df['State'] == 'COMPLETED') &
-        (df['Product'] == 'Current')
-    ].copy()
-
-    # DEV - TO REMOVE
-    # Keep only the first 10 rows after filtering to avoid overwhelming the database during testing
-    df_clean = df_clean.head(10)
-
-    standard = pd.DataFrame()
-
-    # 1) Parse 'Completed Date' into a Python date.
-    #    Your format is 'day/month/year hour:minute', so we set dayfirst=True.
-    standard['Date'] = pd.to_datetime(
-        df_clean['Completed Date'],
-        dayfirst=True,
-        errors='coerce'  # if any bad values, they become NaT instead of crashing
-    ).dt.date
-
-    # 2) Amount: copy directly as float.
-    standard['Amount'] = df_clean['Amount'].astype(float)
-
-    # 3) Description: use Revolut's Description column directly.
-    standard['Description'] = df_clean['Description'].astype(str)
-
-    # 4) Account: since this is Revolut, we can just label it as such.
-    #    Later you could make this 'Revolut Savings', 'Revolut Current', etc.
-    standard['Account'] = 'REVOLUT'
-
-    return standard
+    return result

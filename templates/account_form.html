@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if account else 'New' }} Account - Budget App{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 20px;">
+  <a href="{{ url_for('accounts.accounts') }}" style="text-decoration: none; color: #667eea; font-weight: bold;">← Back to Accounts</a>
+</div>
+
+<h1>{{ 'Edit' if account else 'New Manual Account' }}</h1>
+
+<div class="upload-form">
+  <form method="post">
+
+    <div class="form-group">
+      <label for="name">Account Name</label>
+      <input type="text" name="name" id="name" required
+             value="{{ account.name if account else '' }}">
+    </div>
+
+    <div class="form-group">
+      <label for="currency">Currency</label>
+      <select name="currency" id="currency">
+        <option value="GBP" {{ 'selected' if (account and account.currency == 'GBP') or not account }}>GBP</option>
+        <option value="USD" {{ 'selected' if account and account.currency == 'USD' }}>USD</option>
+        <option value="EUR" {{ 'selected' if account and account.currency == 'EUR' }}>EUR</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>How are expenses shown in your export file?</label>
+      <div>
+        <input type="radio" name="invert_amounts" id="inv_true" value="true"
+               {{ 'checked' if account and account.invert_amounts == true }}>
+        <label for="inv_true">As negative numbers (e.g. -50.00)</label>
+      </div>
+      <div>
+        <input type="radio" name="invert_amounts" id="inv_false" value="false"
+               {{ 'checked' if account and account.invert_amounts == false }}>
+        <label for="inv_false">As positive numbers (e.g. 50.00)</label>
+      </div>
+      <div>
+        <input type="radio" name="invert_amounts" id="inv_none" value=""
+               {{ 'checked' if not account or account.invert_amounts is none }}>
+        <label for="inv_none">Not sure</label>
+      </div>
+    </div>
+
+    <button type="submit">Save Account</button>
+  </form>
+</div>
+{% endblock %}

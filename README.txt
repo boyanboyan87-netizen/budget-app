@@ -8,3 +8,8 @@ https://platform.claude.com/dashboard
 
 Plaid OpenBanking Tool
 https://dashboard.plaid.com/overview
+
+
+### USEFUL COMMANDS ###
+Command to activate (.venv)
+./.venv/Scripts/activate

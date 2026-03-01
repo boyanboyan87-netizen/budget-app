@@ -33,7 +33,7 @@
           <select name="category_{{ tx.id }}" aria-label="Category for {{ tx.description }}">
             <option value="">Uncategorised</option>
             {% for name in category_names %}
-              <option value="{{ name }}" {% if tx.category == name %}selected{% endif %}>
+              <option value="{{ name }}" {% if tx.category_obj and tx.category_obj.name == name %}selected{% endif %}>
                 {{ name }}
               </option>
             {% endfor %}

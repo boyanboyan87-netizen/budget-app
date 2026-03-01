@@ -13,6 +13,7 @@ from auth import auth_bp, init_oauth
 from blueprints.main import main_bp
 from blueprints.transactions import transactions_bp
 from blueprints.plaid import plaid_bp
+from blueprints.accounts import accounts_bp
 
 load_dotenv()
 
@@ -70,6 +71,7 @@ def create_app(config_override: dict | None = None) -> Flask:
     app.register_blueprint(main_bp)
     app.register_blueprint(transactions_bp)
     app.register_blueprint(plaid_bp)
+    app.register_blueprint(accounts_bp)
 
     with app.app_context():
         db.create_all()

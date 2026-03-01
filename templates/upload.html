@@ -51,24 +51,35 @@
   </a>
 </div>
 
-<h1>Upload Bank CSV File</h1>
-<p>Select your bank and choose a CSV file to import transactions.</p>
+<h1>Upload CSV File</h1>
+<p>Select an account and upload a CSV file to import transactions.</p>
 
 <div class="upload-form">
     <form action="/upload-csv" method="post" enctype="multipart/form-data">
+
         <div class="form-group">
-            <label for="bank">Bank:</label>
-            <select name="bank" id="bank" required>
-                <option value="">-- Select your bank --</option>
-                <option value="amex">💳 AMEX</option>
-                <option value="barclays">🏦 Barclays</option>
-                <option value="revolut">🔷 Revolut</option>
-            </select>
+            <label for="account_id">Account:</label>
+            {% if accounts %}
+                <select name="account_id" id="account_id" required>
+                    <option value="">-- Select an account --</option>
+                    {% for acct in accounts %}
+                        <option value="{{ acct.id }}">{{ acct.name }} ({{ acct.currency }})</option>
+                    {% endfor %}
+                </select>
+            {% else %}
+                <p style="color: #888;">No manual accounts yet.
+                    <a href="{{ url_for('accounts.new_account') }}">Create one first</a>
+                </p>
+            {% endif %}
         </div>
 
         <div class="form-group">
             <label for="file">CSV File:</label>
             <input type="file" name="file" id="file" accept=".csv" required>
+            <p style="font-size: 13px; color: #888; margin-top: 6px;">
+                Required columns: <strong>Date</strong> (DD-MM-YYYY), <strong>Amount</strong>, <strong>Description</strong><br>
+                Optional: <strong>Reference</strong> (appended to description)
+            </p>
         </div>
 
         <button type="submit">📤 Upload Transactions</button>

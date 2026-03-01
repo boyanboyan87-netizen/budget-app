@@ -55,7 +55,7 @@
                 <td style="padding: 8px; color: #666;">•••• {{ acct.mask }}</td>
                 <td style="padding: 8px; text-align: right;">
                   {% if acct.latest_balance %}
-                    {{ acct.latest_balance.currency }} {{ "%.2f"|format(acct.latest_balance.current_balance|float) }}
+                    {{ acct.currency }} {{ "%.2f"|format(acct.latest_balance.current_balance|float) }}
                   {% else %}
                     —
                   {% endif %}

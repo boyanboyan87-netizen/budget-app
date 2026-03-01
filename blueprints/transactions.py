@@ -1,19 +1,19 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session, jsonify
 from flask_login import login_required, current_user
 
-from models import db, Transaction
+from models import db, Transaction, Account
 from helpers import (
     get_all_category_names,
     build_claude_payload,
     load_uploaded_csv,
-    parse_bank_dataframe,
     build_transactions_from_df,
     save_transactions,
 )
+from parsers import parse_standard_csv
+
 from claude_client import categorise_with_claude
 
 transactions_bp = Blueprint('transactions', __name__)
-
 
 @transactions_bp.route("/upload-csv", methods=["GET", "POST"])
 @login_required
@@ -24,21 +24,29 @@ def upload_csv():
               in an all-or-nothing way (one bad row = nothing saved).
     """
     if request.method == "GET":
-        return render_template("upload.html")
+        accounts = Account.query.filter_by(user_id=current_user.id, account_type='manual', status='active').all()
+        return render_template("upload.html", accounts=accounts)
+
 
     try:
         df = load_uploaded_csv(request)
-        standard_df = parse_bank_dataframe(df, request.form.get("bank"))
-        created_transactions = build_transactions_from_df(standard_df, current_user.id)
+        account_id = request.form.get("account_id", type=int)
+        account = Account.query.filter_by(id=account_id, user_id=current_user.id).first_or_404()
+        standard_df = parse_standard_csv(df, account.invert_amounts)
+        created_transactions = build_transactions_from_df(standard_df, current_user.id, account.id, account.name)
+
+
         save_transactions(created_transactions)
 
         last_ids = [tx.id for tx in created_transactions]
         session["last_upload_ids"] = last_ids
 
     except ValueError as e:
-        return render_template("upload.html", message=str(e))
+        accounts = Account.query.filter_by(user_id=current_user.id, account_type='manual', status='active').all()
+        return render_template("upload.html", accounts=accounts, message=str(e))
     except Exception as e:
-        return render_template("upload.html", message=f"Error processing CSV: {e}")
+        accounts = Account.query.filter_by(user_id=current_user.id, account_type='manual', status='active').all()
+        return render_template("upload.html", accounts=accounts, message=f"Error processing CSV: {e}")
 
     message = f"Successfully imported {len(created_transactions)} transactions."
     flash(message)

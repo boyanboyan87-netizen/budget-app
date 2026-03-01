@@ -171,7 +171,7 @@ class Account(db.Model):
 
     # Plaid-specific (null for manual accounts)
     plaid_account_id = db.Column(db.String(100), nullable=True)  # Plaid's string ID
-    item_id = db.Column(db.Integer, db.ForeignKey('plaid_item.id'), nullable=True)
+    plaid_item_id = db.Column(db.Integer, db.ForeignKey('plaid_item.id'), nullable=True)
     mask = db.Column(db.String(10), nullable=True)
     subtype = db.Column(db.String(50), nullable=True)  # e.g. 'depository', 'credit'
     invert_amounts = db.Column(db.Boolean, nullable=True)  # True=flip amount signs on import, None=unknown
@@ -208,5 +208,4 @@ class AccountBalance(db.Model):
         index=True,
     )
     current_balance = db.Column(db.Numeric(12, 2), nullable=False)
-    currency = db.Column(db.String(10), nullable=False, default='GBP')
     recorded_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)

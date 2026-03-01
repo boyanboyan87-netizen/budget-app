@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Budget App{% endblock %}</title>
+
+    <!-- #### GLOBAL STYLES #### -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -43,30 +45,42 @@
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
+
+        /* #### FLASH MESSAGES #### */
         .flash-messages { margin-bottom: 20px; }
         .flash {
             padding: 12px;
             border-radius: 4px;
             margin-bottom: 10px;
         }
-        .flash.error { background: #fee; color: #c00; border-left: 4px solid #c00; }
+        .flash.error   { background: #fee; color: #c00; border-left: 4px solid #c00; }
         .flash.success { background: #efe; color: #060; border-left: 4px solid #060; }
-        .flash.info { background: #eef; color: #006; border-left: 4px solid #006; }
+        .flash.info    { background: #eef; color: #006; border-left: 4px solid #006; }
+        .flash.danger  { background: #fee; color: #c00; border-left: 4px solid #c00; }
     </style>
+
+    <!-- #### PAGE-SPECIFIC HEAD (styles, scripts) #### -->
     {% block extra_head %}{% endblock %}
 </head>
 <body>
+
+    <!-- #### NAV BAR #### -->
     <div class="nav">
         <h1>💰 Budget App</h1>
         {% if current_user.is_authenticated %}
         <div class="user-info">
+            <!-- #### NAV LINKS #### -->
+            <a href="{{ url_for('accounts.accounts') }}">Accounts</a>
             <span>{{ current_user.first_name or current_user.email }}</span>
             <a href="{{ url_for('auth.logout') }}">Logout</a>
         </div>
         {% endif %}
     </div>
 
+    <!-- #### PAGE CONTENT #### -->
     <div class="container">
+
+        <!-- #### FLASH MESSAGES #### -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 <div class="flash-messages">
@@ -79,5 +93,6 @@
 
         {% block content %}{% endblock %}
     </div>
+
 </body>
 </html>
