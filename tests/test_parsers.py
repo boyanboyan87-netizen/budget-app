@@ -1,33 +1,48 @@
 import pandas as pd
-from parsers import parse_amex, parse_barclays, parse_revolut
+import pytest
+from parsers import parse_standard_csv
 
-def test_parse_amex():
-    """Test AMEX CSV parser."""
+
+def test_basic_parse():
+    """Standard-format CSV produces correct columns and types."""
     raw_df = pd.read_csv("tests/fixtures/sample-amex.csv")
-    df = parse_amex(raw_df)
-    
-    assert len(df) > 0
-    assert 'Date' in df.columns
-    assert 'Amount' in df.columns
-    assert 'Description' in df.columns
+    df = parse_standard_csv(raw_df, invert_amounts=False)
 
-def test_parse_barclays():
-    """Test Barclays CSV parser."""
-    
-    raw_df = pd.read_csv("tests/fixtures/sample-barclays.csv")
-    df = parse_barclays(raw_df)
-    
     assert len(df) > 0
-    assert 'Date' in df.columns
-    assert 'Amount' in df.columns
-    assert 'Description' in df.columns
+    assert list(df.columns) == ["Date", "Amount", "Description"]
+    assert pd.api.types.is_datetime64_any_dtype(df["Date"])
+    assert pd.api.types.is_float_dtype(df["Amount"])
 
-def test_parse_revolut():
-    """Test Revolut CSV parser."""
-    raw_df = pd.read_csv("tests/fixtures/sample-revolut.csv")
-    df = parse_revolut(raw_df)
-    
-    assert len(df) > 0
-    assert 'Date' in df.columns
-    assert 'Amount' in df.columns
-    assert 'Description' in df.columns
+
+def test_invert_amounts():
+    """invert_amounts=True flips the sign on all amounts."""
+    raw_df = pd.DataFrame({
+        "Date": ["01/01/2025"],
+        "Amount": [-50.0],
+        "Description": ["Grocery shop"],
+    })
+    df = parse_standard_csv(raw_df, invert_amounts=True)
+    assert df["Amount"].iloc[0] == 50.0
+
+
+def test_reference_appended_to_description():
+    """Non-empty Reference is appended to Description with ' | '."""
+    raw_df = pd.DataFrame({
+        "Date": ["01/01/2025"],
+        "Amount": [10.0],
+        "Description": ["Payment"],
+        "Reference": ["REF123"],
+    })
+    df = parse_standard_csv(raw_df, invert_amounts=False)
+    assert df["Description"].iloc[0] == "Payment | REF123"
+
+
+def test_missing_required_column_raises():
+    """Missing required column raises ValueError."""
+    raw_df = pd.DataFrame({
+        "Date": ["01/01/2025"],
+        "Amount": [10.0],
+        # Description missing
+    })
+    with pytest.raises(ValueError, match="Description"):
+        parse_standard_csv(raw_df, invert_amounts=False)
